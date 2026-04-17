@@ -29,3 +29,9 @@ FACE_RECOGNITION_TOLERANCE = float(os.getenv("FACE_RECOGNITION_TOLERANCE", "0.55
 # Cấu hình request của client modules.
 API_BASE_URL = f"http://{HOST}:{PORT}"
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "10"))
+
+# Cấu hình Serial (PC <-> Arduino).
+# - SERIAL_PORT: đặt cố định ví dụ "COM6". Nếu để trống, hệ thống sẽ auto-detect (ưu tiên thiết bị có chữ "Arduino" trong mô tả).
+# - SERIAL_BAUD: mặc định 9600 (phải khớp với Arduino).
+SERIAL_PORT = os.getenv("SERIAL_PORT", "").strip()
+SERIAL_BAUD = int(os.getenv("SERIAL_BAUD", "9600"))
