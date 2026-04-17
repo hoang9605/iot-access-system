@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Thư viện IoT{% endblock %} · Access Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            neon: { cyan: '#22d3ee', violet: '#a78bfa', fuchsia: '#e879f9' },
+          },
+          boxShadow: {
+            'neon': '0 0 20px rgba(34, 211, 238, 0.35), 0 0 40px rgba(167, 139, 250, 0.2)',
+            'neon-lg': '0 0 30px rgba(34, 211, 238, 0.45), 0 0 60px rgba(139, 92, 246, 0.25)',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Orbitron', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(34, 211, 238, 0.15), transparent),
+                  radial-gradient(ellipse 80% 60% at 100% 50%, rgba(139, 92, 246, 0.12), transparent),
+                  radial-gradient(ellipse 60% 40% at 0% 80%, rgba(232, 121, 249, 0.08), transparent),
+                  #0a0e17;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    .gradient-border {
+      position: relative;
+    }
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.6), rgba(139, 92, 246, 0.6), rgba(232, 121, 249, 0.4));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+  </style>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="h-full text-slate-200 antialiased" x-data="{ sidebarOpen: false }">
+  <div class="flex min-h-full">
+    <!-- Mobile overlay -->
+    <div
+      x-show="sidebarOpen"
+      x-transition.opacity
+      @click="sidebarOpen = false"
+      class="fixed inset-0 z-40 bg-black/60 lg:hidden"
+      style="display: none;"
+    ></div>
+
+    <!-- Sidebar -->
+    <aside
+      class="fixed inset-y-0 left-0 z-50 w-64 transform glass border-r border-slate-700/50 transition-transform duration-200 lg:static lg:translate-x-0"
+      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+    >
+      <div class="flex h-full flex-col">
+        <div class="border-b border-slate-700/50 px-5 py-6">
+          <a href="{{ url_for('page_scan') }}" class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 via-violet-500 to-fuchsia-500 shadow-neon">
+              <svg class="h-6 w-6 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118-0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015 11a4 4 0 00-8 0c0 1.256.051 2.498.149 3.726m-4.943 6.544v-10.67c0-1.897.684-3.727 1.922-5.155m0 0A12.053 12.053 0 0112 6c2.614 0 5.033.792 7.05 2.15m0 0L21 3"/></svg>
+            </div>
+            <div>
+              <p class="font-display text-sm font-semibold tracking-wide text-white">LIB ACCESS</p>
+              <p class="text-xs text-cyan-400/80">IoT Dashboard</p>
+            </div>
+          </a>
+        </div>
+
+        <nav class="flex-1 space-y-1 px-3 py-4">
+          <a
+            href="{{ url_for('page_scan') }}"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+              {% if active_nav == 'scan' %}bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-cyan-300 shadow-neon border border-cyan-500/20{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}"
+          >
+            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            Quét khuôn mặt
+          </a>
+          <a
+            href="{{ url_for('page_student_register') }}"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+              {% if active_nav == 'student' %}bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-cyan-300 shadow-neon border border-cyan-500/20{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}"
+          >
+            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            Đăng ký sinh viên
+          </a>
+          <a
+            href="{{ url_for('page_face_register') }}"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition
+              {% if active_nav == 'face' %}bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-cyan-300 shadow-neon border border-cyan-500/20{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}"
+          >
+            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Đăng ký khuôn mặt
+          </a>
+        </nav>
+
+        <div class="border-t border-slate-700/50 px-4 py-4">
+          <p class="text-xs text-slate-500">API: <span class="text-cyan-500/90">/face-auth</span> · <span class="text-violet-400/90">/qr-auth</span></p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex flex-1 flex-col lg:pl-0">
+      <!-- Header -->
+      <header class="sticky top-0 z-30 glass border-b border-slate-700/50">
+        <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              @click="sidebarOpen = !sidebarOpen"
+              class="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden"
+              aria-label="Mở menu"
+            >
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div>
+              <h1 class="font-display text-lg font-semibold text-white sm:text-xl">{% block page_heading %}Dashboard{% endblock %}</h1>
+              <p class="hidden text-xs text-slate-500 sm:block">{% block page_sub %}{% endblock %}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="hidden rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 sm:inline-flex sm:items-center sm:gap-1.5">
+              <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"></span>
+              Hệ thống online
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="border-t border-slate-700/50 glass px-4 py-4 sm:px-6">
+        <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 text-center text-xs text-slate-500 sm:flex-row sm:text-left">
+          <span>© {{ now_year }} Thư viện · Kiểm soát ra vào IoT</span>
+          <span>Face + QR · Flask Backend</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  {% block page_scripts %}{% endblock %}
+</body>
+</html>

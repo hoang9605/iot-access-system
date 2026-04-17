@@ -1,0 +1,149 @@
+{% extends "layouts/base.html" %}
+{% block title %}Quét khuôn mặt · Demo{% endblock %}
+{% block page_heading %}Quét khuôn mặt{% endblock %}
+{% block page_sub %}Demo kiểm soát ra vào — nhận diện qua API /face-auth{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-5xl" x-data="faceScan()">
+  <div class="mb-8 text-center">
+    <p class="mx-auto max-w-2xl text-sm text-slate-400">
+      Đặt khuôn mặt trong khung, bật camera hoặc tải ảnh, sau đó nhấn <strong class="text-cyan-400">Nhận diện</strong>.
+    </p>
+  </div>
+
+  <div class="grid gap-8 lg:grid-cols-5">
+    <div class="lg:col-span-3">
+      <div class="gradient-border rounded-2xl p-[1px]">
+        <div class="relative overflow-hidden rounded-2xl bg-slate-900/90">
+          <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-fuchsia-500/10 pointer-events-none"></div>
+          <video x-ref="video" class="aspect-video w-full object-cover" autoplay muted playsinline></video>
+          <canvas x-ref="canvas" class="hidden"></canvas>
+
+          <div class="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-center gap-2 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <button type="button" @click="openCamera" class="rounded-lg bg-cyan-500/90 px-4 py-2 text-sm font-semibold text-slate-950 shadow-neon hover:bg-cyan-400">Bật camera</button>
+            <button type="button" @click="capture" class="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/20">Chụp khung hình</button>
+            <label class="cursor-pointer rounded-lg border border-violet-400/40 bg-violet-500/20 px-4 py-2 text-sm font-medium text-violet-200 hover:bg-violet-500/30">
+              Tải ảnh
+              <input type="file" accept="image/*" class="hidden" @change="onFile" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 flex flex-col gap-4">
+      <div class="gradient-border rounded-2xl p-[1px] flex-1">
+        <div class="rounded-2xl bg-slate-900/80 p-5 h-full flex flex-col">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Ảnh đang dùng</p>
+          <div class="mt-3 flex-1 overflow-hidden rounded-xl border border-slate-600/40 bg-black/50 min-h-[160px]">
+            <img :src="previewUrl || placeholder" alt="preview" class="h-full w-full object-contain" />
+          </div>
+
+          <button
+            type="button"
+            @click="recognize"
+            :disabled="loading || !base64"
+            class="mt-4 w-full rounded-xl bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 py-4 font-display text-lg font-bold tracking-wide text-white shadow-neon-lg transition hover:opacity-95 disabled:opacity-40"
+          >
+            <span x-show="!loading">Nhận diện</span>
+            <span x-show="loading" x-cloak>Đang nhận diện…</span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="rounded-2xl border p-5 transition"
+        :class="resultClass"
+      >
+        <p class="text-xs font-medium uppercase tracking-wider opacity-70">Kết quả</p>
+        <template x-if="result && result.status === 'success'">
+          <div class="mt-3">
+            <p class="font-display text-2xl font-bold text-white" x-text="result.name"></p>
+            <p class="mt-1 font-mono text-sm text-cyan-300" x-text="result.student_id"></p>
+          </div>
+        </template>
+        <template x-if="result && result.status !== 'success'">
+          <pre class="mt-3 whitespace-pre-wrap font-sans text-sm" x-text="JSON.stringify(result, null, 2)"></pre>
+        </template>
+        <p x-show="!result" class="mt-3 text-sm text-slate-500">Chưa có kết quả. Chụp hoặc chọn ảnh rồi nhấn Nhận diện.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  function faceScan() {
+    return {
+      stream: null,
+      base64: '',
+      previewUrl: '',
+      placeholder: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240"><rect fill="%230f172a" width="400" height="240"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-family="sans-serif" font-size="13">Camera / ảnh thử nghiệm</text></svg>'),
+      loading: false,
+      result: null,
+      get resultClass() {
+        if (!this.result) return 'border-slate-700/50 bg-slate-900/40';
+        if (this.result.status === 'success') return 'border-emerald-500/50 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.15)]';
+        return 'border-red-500/40 bg-red-500/10';
+      },
+      async openCamera() {
+        try {
+          if (this.stream) {
+            this.stream.getTracks().forEach((t) => t.stop());
+          }
+          this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+          this.$refs.video.srcObject = this.stream;
+        } catch (e) {
+          this.result = { status: 'fail', message: 'Không mở được camera: ' + e };
+        }
+      },
+      capture() {
+        const v = this.$refs.video;
+        const c = this.$refs.canvas;
+        if (!v.videoWidth) {
+          this.result = { status: 'fail', message: 'Camera chưa sẵn sàng.' };
+          return;
+        }
+        c.width = v.videoWidth;
+        c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        const dataUrl = c.toDataURL('image/jpeg', 0.92);
+        this.previewUrl = dataUrl;
+        this.base64 = dataUrl.split(',')[1];
+        this.result = null;
+      },
+      onFile(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          const dataUrl = String(r.result || '');
+          this.previewUrl = dataUrl;
+          this.base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+          this.result = null;
+        };
+        r.readAsDataURL(f);
+      },
+      async recognize() {
+        if (!this.base64) return;
+        this.loading = true;
+        this.result = null;
+        try {
+          const res = await fetch('/face-auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: this.base64 }),
+          });
+          this.result = await res.json();
+        } catch (e) {
+          this.result = { status: 'fail', message: String(e) };
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  }
+</script>
+<style>[x-cloak]{display:none!important}</style>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "layouts/base.html" %}
+{% block title %}Đăng ký sinh viên{% endblock %}
+{% block page_heading %}Đăng ký sinh viên{% endblock %}
+{% block page_sub %}Tạo hồ sơ mới trong hệ thống thư viện{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl" x-data="studentForm()">
+  <div class="gradient-border rounded-2xl p-[1px]">
+    <div class="rounded-2xl bg-slate-900/80 p-6 sm:p-8">
+      <p class="mb-6 text-sm text-slate-400">
+        Nhập mã sinh viên và họ tên. Mã sẽ được chuẩn hóa thành chữ hoa (ví dụ: <code class="text-cyan-400">sv001</code> → <code class="text-cyan-400">SV001</code>).
+      </p>
+
+      <form @submit.prevent="submit" class="space-y-5">
+        <div>
+          <label class="mb-2 block text-sm font-medium text-slate-300">Mã sinh viên</label>
+          <input
+            type="text"
+            x-model="studentId"
+            class="w-full rounded-xl border border-slate-600/60 bg-slate-950/50 px-4 py-3 text-white placeholder-slate-500 outline-none ring-cyan-500/40 focus:border-cyan-500/50 focus:ring-2"
+            placeholder="VD: SV001"
+            autocomplete="off"
+          />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-slate-300">Họ và tên</label>
+          <input
+            type="text"
+            x-model="name"
+            class="w-full rounded-xl border border-slate-600/60 bg-slate-950/50 px-4 py-3 text-white placeholder-slate-500 outline-none ring-cyan-500/40 focus:border-cyan-500/50 focus:ring-2"
+            placeholder="VD: Nguyễn Văn A"
+            autocomplete="name"
+          />
+        </div>
+
+        <button
+          type="submit"
+          :disabled="loading"
+          class="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-violet-600 py-3.5 font-semibold text-white shadow-neon transition hover:opacity-95 disabled:opacity-50"
+        >
+          <span x-show="!loading">Tạo sinh viên</span>
+          <span x-show="loading" x-cloak>Đang xử lý…</span>
+        </button>
+      </form>
+
+      <div x-show="message" x-transition class="mt-6 rounded-xl border p-4 text-sm" :class="ok ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-red-500/40 bg-red-500/10 text-red-200'" x-cloak>
+        <pre class="whitespace-pre-wrap font-sans" x-text="message"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  function studentForm() {
+    return {
+      studentId: '',
+      name: '',
+      loading: false,
+      message: '',
+      ok: false,
+      async submit() {
+        this.message = '';
+        if (!this.studentId.trim() || !this.name.trim()) {
+          this.ok = false;
+          this.message = 'Vui lòng nhập đủ mã sinh viên và họ tên.';
+          return;
+        }
+        this.loading = true;
+        try {
+          const res = await fetch('/students', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: this.studentId.trim(), name: this.name.trim() }),
+          });
+          const data = await res.json();
+          this.ok = res.ok && data.status === 'success';
+          this.message = JSON.stringify(data, null, 2);
+        } catch (e) {
+          this.ok = false;
+          this.message = 'Lỗi kết nối: ' + e;
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  }
+</script>
+<style>[x-cloak]{display:none!important}</style>
+{% endblock %}

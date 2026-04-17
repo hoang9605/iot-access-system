@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-CORS
+requests
+Pillow
+python-dotenv
+face_recognition
+opencv-python
+numpy
+qrcode
+pyzbar
